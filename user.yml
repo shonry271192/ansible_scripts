@@ -1,0 +1,60 @@
+---
+ - hosts: shonry
+   become_user: sudo
+
+   tasks:
+
+     # Create A Group
+     - name: Adding A Group ==>>
+       group:
+        name={{ item }}
+        state=present
+       with_items:
+        - group1
+        - group2
+       tags: Add_New_Group
+
+     # This will add users on groups
+     - name: Adding multiple users
+       user:
+        name={{ item }}
+        state=present
+        groups=group1
+        password="$6$fs5aF9AH$Iq2rTrBBZfd2kBpo/dAnTdtdCOeNmxsRJdX6A9nHHWwjZMv1OLzpnKQCUKyr8l9XEzIYzN8bffb5AhEYToL0l0"
+        shell=/bin/bash
+       with_items:
+        - item1
+        - item2
+        - item3
+        - item4
+       tags: Adding_New_Users
+
+     # This Task Genrates SSH Keys
+     - name: Generate SSH keys for each user
+       user:
+        name={{ item }}
+        generate_ssh_key=yes
+        ssh_key_bits=4096
+        ssh_key_files=.ssh/id_rsa
+       with_items:
+        - item1
+        - item2
+       tags: Creating_SSH_Keys_User
+
+      #Copy keys to File
+     - name: Update User Auth keys
+       authorized_key:
+        user: item1,item2
+        state: present
+        key: "{{lookup{'file', 'home/item1/.ssh/id_rsa.pub'}}}"
+        key: "{{lookup{'file', 'home/item2/.ssh/id_rsa.pub'}}}"
+       tags: Copy_Pub_Key
+
+      #deleting users
+     - name: Delete A User
+       user:
+        name={{ item }}
+        state=absent
+       with_items:
+        - item3
+
